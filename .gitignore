@@ -6,4 +6,4 @@ eval/images/
 eval/out/
 *.log
 .DS_Store
-apps/dashboard/data/cache/
+packages/tree-search/data/cache/

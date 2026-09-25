@@ -156,9 +156,9 @@ pnpm workspace (Node >= 20). Copy `.env.example` to `.env` and set `OPENROUTER_A
 - `LIVE=1 pnpm --filter @openquest/adapter-de-muenster test`: include live WFS smoke test
 - `pnpm eval:fetch && pnpm eval`: tree photo verification evaluation (see ADR-0002)
 - `pnpm verify <image> --lat .. --lon ..`: verify a single photo against the nearest Münster tree
-- `pnpm --filter @openquest/dashboard start`: tree map with Jev search on http://localhost:8787 (`build-data` rebuilds `apps/dashboard/data/trees.json`)
+- `pnpm --filter @openquest/dashboard start`: tree map with Jev search on http://localhost:8787 (`pnpm --filter @openquest/tree-search build-data` rebuilds the tree data)
 
-Packages so far: `packages/tree-verification` (photo verification, framework free), `packages/adapters/de-muenster` (Münster tree WFS as `NearbyTreeProvider`, street names, districts), `packages/adapters/de-nrw` (tree heights from the NRW nDOM50), `apps/dashboard` (tree map with Jev search).
+Packages so far: `packages/tree-verification` (photo verification, framework free), `packages/adapters/de-muenster` (Münster tree WFS as `NearbyTreeProvider`, street names, districts), `packages/adapters/de-nrw` (tree heights from the NRW nDOM50), `packages/tree-search` (Jev search over all trees + prebuilt data), `apps/dashboard` (tree map with Jev search).
 
 ## Open questions
 

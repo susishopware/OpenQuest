@@ -13,6 +13,11 @@ Alle Bäume auf einer Karte, Suche per Jev: [apps/dashboard](apps/dashboard/READ
 - [ADR-0002: Tree photo verification with a vision ensemble, Jev and geo context](docs/adr/0002-tree-photo-verification.md)
 - [ADR-0005: Tree assessment from player photos (condition, tree pit, phenology, inventory)](docs/adr/0005-tree-assessment-from-player-photos.md)
 
+## Daten
+
+- [Data sources: Herkunft, Lizenzen, Attribution aller Daten](docs/data-model/data-sources.md)
+- [Data model (ERD)](docs/data-model/erd.md)
+
 ## Recherche (Research Notes)
 
 - [Research Note 0001: Open-Data-Portal Münster und Baumkataster, Datenbezug und Rückkanal](docs/research/0001-opendata-muenster-baumkataster.md)

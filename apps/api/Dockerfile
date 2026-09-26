@@ -21,5 +21,8 @@ WORKDIR /app
 COPY --from=build /app .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+# Maps DB_* / MINIO_ROOT_* (separate values, as Render provides them) to the .NET settings when
+# ConnectionStrings__Default / Storage__AccessKey are not set; docker compose sets those directly.
+COPY --chmod=755 apps/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 USER app
-ENTRYPOINT ["dotnet", "OpenQuest.Api.dll"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

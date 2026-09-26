@@ -50,6 +50,9 @@ const nextConfig: NextConfig = {
       ],
     }];
   },
+  // Self-contained server for Docker (Dockerfile.web copies .next/standalone). The tree data is not traced
+  // through `new URL(...)`, so the image ships it separately and sets TREE_DATA_PATH.
+  output: 'standalone',
 };
 
 export default nextConfig;

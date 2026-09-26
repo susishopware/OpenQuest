@@ -1,0 +1,140 @@
+# Render Blueprint for the OpenQuest demo (https://render.com/docs/blueprint-spec).
+# New -> Blueprint -> repo susishopware/OpenQuest, branch `deploy`.
+# Render asks for every `sync: false` value (OPENROUTER_API_KEY) when the Blueprint is created.
+#
+# Free plan caveats: services sleep after 15 min without traffic (first request ~1 min), the free
+# Postgres expires after 30 days, and MinIO has no disk (photos are lost on restart). Switch
+# `plan: free` to `starter` and add a disk to openquest-minio for anything beyond the demo.
+#
+# The tree data comes from the Python importer (apps/importer). It is not a Render service on the
+# free plan: run it from your machine against the database's external URL, see docs/render.md.
+# A paid cron job for it is sketched at the end of this file.
+
+envVarGroups:
+  - name: openquest-storage
+    envVars:
+      - key: MINIO_ROOT_USER
+        value: openquest
+      - key: MINIO_ROOT_PASSWORD
+        generateValue: true
+
+services:
+  # Player app (Next.js) with the Jev tree search. -> openquest.fun
+  - type: web
+    name: openquest-web
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: deploy
+    dockerfilePath: ./Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+  # Tree dashboard: all trees on a map, Jev search. -> karte.openquest.fun
+  - type: web
+    name: openquest-karte
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: deploy
+    dockerfilePath: ./apps/dashboard/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: "8787"
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+  # .NET backend (quests, claims, submissions). Owns the schema: applies the EF Core migrations and
+  # seeds the asset types on start. -> api.openquest.fun
+  - type: web
+    name: openquest-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: deploy
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /openapi/v1.json
+    envVars:
+      # apps/api/Dockerfile listens on 8080 (ASPNETCORE_URLS).
+      - key: PORT
+        value: "8080"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # apps/api/docker-entrypoint.sh builds ConnectionStrings__Default from these.
+      - key: DB_HOST
+        fromDatabase: { name: openquest-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: openquest-db, property: port }
+      - key: DB_NAME
+        fromDatabase: { name: openquest-db, property: database }
+      - key: DB_USER
+        fromDatabase: { name: openquest-db, property: user }
+      - key: DB_PASSWORD
+        fromDatabase: { name: openquest-db, property: password }
+      - fromGroup: openquest-storage
+      # Free web services cannot receive private network traffic, so the API talks to MinIO publicly.
+      # Adjust if Render assigns a different URL (Dashboard -> openquest-minio).
+      - key: Storage__ServiceUrl
+        value: https://openquest-minio.onrender.com
+      - key: Storage__Bucket
+        value: openquest-photos
+      - key: Jwt__Key
+        generateValue: true
+      - key: Admin__Username
+        value: admin
+      - key: Admin__Password
+        generateValue: true
+      - key: Cors__Origins
+        value: https://openquest.fun,https://www.openquest.fun,https://karte.openquest.fun,https://openquest-web.onrender.com
+
+  # S3 compatible photo storage for the API (demo only, no persistent disk on the free plan).
+  - type: web
+    name: openquest-minio
+    runtime: image
+    plan: free
+    region: frankfurt
+    image:
+      url: docker.io/bitnamilegacy/minio:latest
+    healthCheckPath: /minio/health/live
+    envVars:
+      - key: PORT
+        value: "9000"
+      - key: MINIO_DEFAULT_BUCKETS
+        value: openquest-photos
+      - fromGroup: openquest-storage
+
+  # Optional, not on the free plan (cron jobs start at the paid "starter" instance type): the
+  # importer as a daily cron job. It reaches the database over the private network. Cron jobs have
+  # no disk, so every run downloads the nDOM heights again (~10,000 WCS requests) and keeps its
+  # snapshots only until the run ends. Uncomment to use it.
+  #
+  # - type: cron
+  #   name: openquest-importer
+  #   runtime: docker
+  #   plan: starter
+  #   region: frankfurt
+  #   branch: deploy
+  #   dockerfilePath: ./apps/importer/Dockerfile
+  #   dockerContext: .
+  #   schedule: "30 3 * * *"
+  #   envVars:
+  #     - key: DATABASE_URL
+  #       fromDatabase: { name: openquest-db, property: connectionString }
+  #     - key: SYNC_INTERVAL_SECONDS
+  #       value: "0"
+
+databases:
+  - name: openquest-db
+    plan: free
+    region: frankfurt
+    databaseName: openquest
+    user: openquest
+    postgresMajorVersion: "17"

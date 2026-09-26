@@ -11,3 +11,16 @@ docs/
 **/bin
 **/obj
 **/node_modules
+
+# Node images (Dockerfile.web, apps/dashboard/Dockerfile copy the whole repository).
+**/.next
+**/*.tsbuildinfo
+**/*.log
+.claude
+.pnpm-store
+.env.*
+!.env.example
+eval/images
+eval/out
+packages/tree-search/data/cache
+test-results
